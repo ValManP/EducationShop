@@ -1,6 +1,7 @@
 package logic;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.sql.*;
 
@@ -131,7 +132,7 @@ public class Container {
         return names;
     }
 
-    public List<Club> getClubs(){
+    public List<Club> getClubs(ClubFilter filter){
         List<Club> clubs = new ArrayList<Club>();
 
         try {
@@ -144,7 +145,7 @@ public class Container {
         String sql = "SELECT o.object_id, o.name, o.description" +
                 " FROM objects o, object_types ot" +
                 " WHERE o.object_type_id = ot.object_type_id" +
-                " AND ot.name = 'Фитнес-клуб'";
+                " AND ot.name = 'Фитнес-клуб'" + filter.toString();
 
             // SQL query for club's address&phone
             String sqlFilter = "SELECT p.text_value" +
@@ -162,7 +163,8 @@ public class Container {
             String sqlNum = "select club_pack.numberOfCard(?) from dual";
 
 
-            String avg = "", num = "", address = "", phone = "";
+            String address = "", phone = "";
+            int avg = 0, num = 0;
 
             Statement stat = connection.createStatement();
             PreparedStatement preparedStatement = null;
@@ -173,7 +175,6 @@ public class Container {
                 while (result.next()) {
 
                     int id = result.getInt("object_id");
-                    //String avg = "", num = "";
 
                     preparedStatement = connection.prepareStatement(sqlFilter+sqlAddress);
                     preparedStatement.setInt(1, id);
@@ -189,7 +190,7 @@ public class Container {
 
                     try (ResultSet result1 = preparedStatement.executeQuery();) {
                         while (result1.next()) {
-                            avg = result1.getString(1);
+                            phone = result1.getString(1);
                         }
                     }
 
@@ -198,7 +199,7 @@ public class Container {
 
                     try (ResultSet result1 = preparedStatement.executeQuery();) {
                         while (result1.next()) {
-                            avg = result1.getString(1);
+                            avg = result1.getInt(1);
                         }
                     }
 
@@ -207,7 +208,7 @@ public class Container {
                     //result1 = preparedStatement.executeQuery();
                     try (ResultSet result1 = preparedStatement.executeQuery();) {
                         while (result1.next()) {
-                            num = result1.getString(1);
+                            num = result1.getInt(1);
                         }
                     }
 
@@ -225,6 +226,9 @@ public class Container {
     catch (ClassNotFoundException cnfe){
         cnfe.printStackTrace();
     }
+
+        // Сортируем клубы по пулярности
+        if (filter.isPopularity()) Collections.sort(clubs);
 
         return clubs;
     }

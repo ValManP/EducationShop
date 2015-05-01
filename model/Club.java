@@ -1,25 +1,18 @@
 package logic;
 
 import java.io.Serializable;
+import java.lang.*;
+import java.lang.Object;
 
 
-public class Club implements Serializable{
+public class Club implements Serializable, Comparable{
 
     private String name;
     private String address;
     private String phone;
-    private String avgPriceCard;
-    private String numberOfCards;
+    private int avgPriceCard;
+    private int numberOfCards;
     private String descriptionClub;
-
-    public Club(String name, String address, String phone, String avgPriceCard, String numberOfCards, String descriptionClub) {
-        this.name = name;
-        this.address = address;
-        this.phone = phone;
-        this.avgPriceCard = avgPriceCard;
-        this.numberOfCards = numberOfCards;
-        this.descriptionClub = descriptionClub;
-    }
 
     public String getName() {
         return name;
@@ -45,19 +38,19 @@ public class Club implements Serializable{
         this.phone = phone;
     }
 
-    public String getAvgPriceCard() {
+    public int getAvgPriceCard() {
         return avgPriceCard;
     }
 
-    public void setAvgPriceCard(String avgPriceCard) {
+    public void setAvgPriceCard(int avgPriceCard) {
         this.avgPriceCard = avgPriceCard;
     }
 
-    public String getNumberOfCards() {
+    public int getNumberOfCards() {
         return numberOfCards;
     }
 
-    public void setNumberOfCards(String numberOfCards) {
+    public void setNumberOfCards(int numberOfCards) {
         this.numberOfCards = numberOfCards;
     }
 
@@ -67,5 +60,33 @@ public class Club implements Serializable{
 
     public void setDescriptionClub(String descriptionClub) {
         this.descriptionClub = descriptionClub;
+    }
+
+    public Club(String name, String address, String phone, int avgPriceCard, int numberOfCards, String descriptionClub) {
+        this.name = name;
+
+        this.address = address;
+        this.phone = phone;
+        this.avgPriceCard = avgPriceCard;
+        this.numberOfCards = numberOfCards;
+        this.descriptionClub = descriptionClub;
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        Club tmp = (Club)o;
+
+        if (this.getNumberOfCards() < tmp.getNumberOfCards())
+            return -1;
+        if (this.getNumberOfCards() > tmp.getNumberOfCards())
+            return 1;
+        if (this.getNumberOfCards() == tmp.getNumberOfCards()){
+            if (this.getAvgPriceCard() < tmp.getAvgPriceCard())
+                return -1;
+            if (this.getAvgPriceCard() > tmp.getAvgPriceCard())
+                return 1;
+
+        }
+          return 0;
     }
 }
