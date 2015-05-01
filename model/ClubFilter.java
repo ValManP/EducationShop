@@ -5,8 +5,8 @@ import java.io.Serializable;
 
 public class ClubFilter implements Serializable {
     private boolean popularity;
-    private String districtName; // Сделать массив String, для фильтра по нескольким районам
-    private String clubName; // Аналогично здесь
+    private String districtName; // РЎРґРµР»Р°С‚СЊ РјР°СЃСЃРёРІ String, РґР»СЏ С„РёР»СЊС‚СЂР° РїРѕ РЅРµСЃРєРѕР»СЊРєРёРј СЂР°Р№РѕРЅР°Рј
+    private String clubName; // РђРЅР°Р»РѕРіРёС‡РЅРѕ Р·РґРµСЃСЊ
 
     public ClubFilter() {
         this.clubName = "";
@@ -50,7 +50,7 @@ public class ClubFilter implements Serializable {
         String sqlFilter = "";
 
         if (!this.districtName.equals(""))
-            sqlFilter += " AND a.name = 'Район' AND p.text_value = '"+ this.districtName + "' ";
+            sqlFilter += " AND a.name = 'Р Р°Р№РѕРЅ' AND p.text_value = '"+ this.districtName + "' ";
 
         if (!this.clubName.equals(""))
             sqlFilter += " AND o.name = '"+ this.clubName + "' ";
