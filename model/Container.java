@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.sql.*;
+import view.*;
 
 
 public class Container {
@@ -142,9 +143,13 @@ public class Container {
         connection = getConnection();
 
         // SQL query for clubs
-        String sql = "SELECT o.object_id, o.name, o.description" +
-                " FROM objects o, object_types ot" +
+        String sql = "SELECT DISTINCT o.object_id, o.name, o.description" +
+                " FROM objects o, object_types ot, references r, attributes a, params p " +
                 " WHERE o.object_type_id = ot.object_type_id" +
+                " AND o.object_id = r.object_id " +
+                " AND r.attribute_id = a.attribute_id " +
+                " AND o.object_id = p.object_id " +
+                " AND a.attribute_id = p.attribute_id " +
                 " AND ot.name = 'Фитнес-клуб'" + filter.toString();
 
             // SQL query for club's address&phone
@@ -231,5 +236,109 @@ public class Container {
         if (filter.isPopularity()) Collections.sort(clubs);
 
         return clubs;
+    }
+
+    public List<Card> getCards(CardFilter filter){
+        List<Card> cards = new ArrayList<Card>();
+
+        try {
+            // Load driver
+            Class.forName(driver);
+            // Create connection
+            connection = getConnection();
+
+            // SQL query for cards
+            String sql = "SELECT DISTINCT o.object_id, o.name, o.description" +
+                    " FROM objects o, object_types ot, references r, attributes a, params p " +
+                    " WHERE o.object_type_id = ot.object_type_id" +
+                    " AND o.object_id = r.object_id " +
+                    " AND r.attribute_id = a.attribute_id " +
+                    " AND o.object_id = p.object_id " +
+                    " AND a.attribute_id = p.attribute_id " +
+                    " AND ot.name = 'Абонемент' " + filter.toString();
+
+            // SQL query for card's information
+            String sqlFilter = " FROM objects o, references r, attributes a, params p" +
+                    " WHERE o.object_id = ?" +
+                    " AND o.object_id = r.object_id" +
+                    " AND r.attribute_id = a.attribute_id" +
+                    " AND o.object_id = p.object_id" +
+                    " AND a.attribute_id = p.attribute_id ";
+            String sqlPrice = " AND a.name = 'Цена(руб.)'";
+            String sqlValidity = " AND a.name = 'Срок действия' ";
+            String sqlHavePool = " AND a.name = 'Наличие бассейна' ";
+            String sqlType = " AND a.name = 'Тип карты' ";
+
+
+            int price = 0, validity = 0;
+            boolean pool = false;
+            String type = "";
+
+            Statement stat = connection.createStatement();
+            PreparedStatement preparedStatement = null;
+
+
+            try (ResultSet result = stat.executeQuery(sql)) {
+
+                while (result.next()) {
+                    // Get card's id
+                    int id = result.getInt("object_id");
+                    // Get price
+                    preparedStatement = connection.prepareStatement("SELECT p.number_value" + sqlFilter + sqlPrice);
+                    preparedStatement.setInt(1, id);
+
+                    try (ResultSet result1 = preparedStatement.executeQuery();) {
+                        while (result1.next()) {
+                            price = result1.getInt(1);
+                        }
+                    }
+                    // Get validity(Срок действия)
+                    preparedStatement = connection.prepareStatement("SELECT p.number_value" + sqlFilter + sqlValidity);
+                    preparedStatement.setInt(1, id);
+
+                    try (ResultSet result1 = preparedStatement.executeQuery();) {
+                        while (result1.next()) {
+                            validity = result1.getInt(1);
+                        }
+                    }
+                    // Get information about swimming pool
+                    preparedStatement = connection.prepareStatement("SELECT p.text_value" + sqlFilter + sqlHavePool);
+                    preparedStatement.setInt(1, id);
+
+                    try (ResultSet result1 = preparedStatement.executeQuery();) {
+                        while (result1.next()) {
+                            if (result1.getString(1).equals("Да")) pool = true;
+                        }
+                    }
+                    // Get card's type
+                    preparedStatement = connection.prepareStatement("SELECT p.text_value" + sqlFilter+sqlType);
+                    preparedStatement.setInt(1, id);
+                    //result1 = preparedStatement.executeQuery();
+                    try (ResultSet result1 = preparedStatement.executeQuery();) {
+                        while (result1.next()) {
+                            type = result1.getString(1);
+                        }
+                    }
+
+                    // Add new card to list
+                    cards.add(new Card(id, result.getString("name"), price, validity, pool, type, result.getString("description")));
+                }
+            }
+
+
+
+        }
+        catch (SQLException sqle){
+            sqle.printStackTrace();
+        }
+        catch (ClassNotFoundException cnfe){
+            cnfe.printStackTrace();
+        }
+
+        // Сортируем карты по пулярности
+        if (filter.isPopularity()) Collections.sort(cards);
+
+        return cards;
+
     }
 }
