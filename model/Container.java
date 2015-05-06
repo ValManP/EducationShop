@@ -134,112 +134,8 @@ public class Container {
     }
 
     public List<Club> getClubs(ClubFilter filter){
+
         List<Club> clubs = new ArrayList<Club>();
-
-        try {
-        // Load driver
-        Class.forName(driver);
-        // Create connection
-        connection = getConnection();
-
-        // SQL query for clubs
-        String sql = "SELECT DISTINCT o.object_id, o.name, o.description" +
-                " FROM objects o, object_types ot, references r, attributes a, params p " +
-                " WHERE o.object_type_id = ot.object_type_id" +
-                " AND o.object_id = r.object_id " +
-                " AND r.attribute_id = a.attribute_id " +
-                " AND o.object_id = p.object_id " +
-                " AND a.attribute_id = p.attribute_id " +
-                " AND ot.name = 'Фитнес-клуб'" + filter.toString();
-
-            // SQL query for club's address&phone
-            String sqlFilter = "SELECT p.text_value" +
-                    " FROM objects o, references r, attributes a, params p" +
-                    " WHERE o.object_id = ?" +
-                    " AND o.object_id = r.object_id" +
-                    " AND r.attribute_id = a.attribute_id" +
-                    " AND o.object_id = p.object_id" +
-                    " AND a.attribute_id = p.attribute_id ";
-            String sqlAddress = " AND a.name = 'Адрес'";
-            String sqlPhone = " AND a.name = 'Телефон' ";
-
-            // SQL query for club's statistics
-            String sqlAvg = "select club_pack.avgPriceCard(?) from dual";
-            String sqlNum = "select club_pack.numberOfCard(?) from dual";
-
-
-            String address = "", phone = "";
-            int avg = 0, num = 0;
-
-            Statement stat = connection.createStatement();
-            PreparedStatement preparedStatement = null;
-
-
-            try (ResultSet result = stat.executeQuery(sql)) {
-
-                while (result.next()) {
-
-                    int id = result.getInt("object_id");
-
-                    preparedStatement = connection.prepareStatement(sqlFilter+sqlAddress);
-                    preparedStatement.setInt(1, id);
-
-                    try (ResultSet result1 = preparedStatement.executeQuery();) {
-                        while (result1.next()) {
-                            address = result1.getString(1);
-                        }
-                    }
-
-                    preparedStatement = connection.prepareStatement(sqlFilter+sqlPhone);
-                    preparedStatement.setInt(1, id);
-
-                    try (ResultSet result1 = preparedStatement.executeQuery();) {
-                        while (result1.next()) {
-                            phone = result1.getString(1);
-                        }
-                    }
-
-                    preparedStatement = connection.prepareStatement(sqlAvg);
-                    preparedStatement.setInt(1, id);
-
-                    try (ResultSet result1 = preparedStatement.executeQuery();) {
-                        while (result1.next()) {
-                            avg = result1.getInt(1);
-                        }
-                    }
-
-                    preparedStatement = connection.prepareStatement(sqlNum);
-                    preparedStatement.setInt(1, id);
-                    //result1 = preparedStatement.executeQuery();
-                    try (ResultSet result1 = preparedStatement.executeQuery();) {
-                        while (result1.next()) {
-                            num = result1.getInt(1);
-                        }
-                    }
-
-
-                    clubs.add(new Club(result.getString("name"), address, phone, avg, num, result.getString("description")));
-                }
-            }
-
-
-
-    }
-    catch (SQLException sqle){
-        sqle.printStackTrace();
-    }
-    catch (ClassNotFoundException cnfe){
-        cnfe.printStackTrace();
-    }
-
-        // Сортируем клубы по пулярности
-        if (filter.isPopularity()) Collections.sort(clubs);
-
-        return clubs;
-    }
-
-    public List<Card> getCards(CardFilter filter){
-        List<Card> cards = new ArrayList<Card>();
 
         try {
             // Load driver
@@ -247,81 +143,51 @@ public class Container {
             // Create connection
             connection = getConnection();
 
-            // SQL query for cards
-            String sql = "SELECT DISTINCT o.object_id, o.name, o.description" +
-                    " FROM objects o, object_types ot, references r, attributes a, params p " +
-                    " WHERE o.object_type_id = ot.object_type_id" +
-                    " AND o.object_id = r.object_id " +
-                    " AND r.attribute_id = a.attribute_id " +
-                    " AND o.object_id = p.object_id " +
-                    " AND a.attribute_id = p.attribute_id " +
-                    " AND ot.name = 'Абонемент' " + filter.toString();
+            // Вычисляем диапазон выводимого результата
+            int startPage = (filter.getPage()-1)*filter.getCountOnPage() + 1;
+            int finishPage = startPage + filter.getCountOnPage() - 1;
 
-            // SQL query for card's information
-            String sqlFilter = " FROM objects o, references r, attributes a, params p" +
-                    " WHERE o.object_id = ?" +
-                    " AND o.object_id = r.object_id" +
-                    " AND r.attribute_id = a.attribute_id" +
-                    " AND o.object_id = p.object_id" +
-                    " AND a.attribute_id = p.attribute_id ";
-            String sqlPrice = " AND a.name = 'Цена(руб.)'";
-            String sqlValidity = " AND a.name = 'Срок действия' ";
-            String sqlHavePool = " AND a.name = 'Наличие бассейна' ";
-            String sqlType = " AND a.name = 'Тип карты' ";
+            // SQL query for clubs
+            String sql = "SELECT qw.* " +
+                    " from " +
+                    " (" +
+                    " SELECT o.object_id id, " +
+                    "       o.name name, " +
+                    "       address.text_value address, " +
+                    "       phone.text_value phone, " +
+                    "       (select club_pack.avgPriceCard(o.object_id) from dual ) avgPr, " +
+                    "       (select club_pack.numberOfCard(o.object_id) from dual ) numCr, " +
+                    "       o.description descr, " +
+                    "       row_number() over (order by o.name) rn " +
+                    " from objects o " +
+                    " join params address " +
+                    "     on address.object_id = o.object_id " +
+                    "     and address.attribute_id = 21 " +
+                    " join params phone " +
+                    "     on phone.object_id = o.object_id " +
+                    "     and phone.attribute_id = 22 " +
+                    " join params district " +
+                    "     on district.object_id = o.object_id " +
+                    "     and district.attribute_id = 41 " +
+                    " where 1=1 "
+                    + filter.toString() +
+                    " ) qw " +
+                    " where qw.rn between " + startPage + " and " + finishPage;
+
+            if (filter.isPopularity()) sql+= " order by qw.name, qw.avgPr, qw.numCr ";
 
 
-            int price = 0, validity = 0;
-            boolean pool = false;
-            String type = "";
 
             Statement stat = connection.createStatement();
-            PreparedStatement preparedStatement = null;
 
 
             try (ResultSet result = stat.executeQuery(sql)) {
 
                 while (result.next()) {
-                    // Get card's id
-                    int id = result.getInt("object_id");
-                    // Get price
-                    preparedStatement = connection.prepareStatement("SELECT p.number_value" + sqlFilter + sqlPrice);
-                    preparedStatement.setInt(1, id);
 
-                    try (ResultSet result1 = preparedStatement.executeQuery();) {
-                        while (result1.next()) {
-                            price = result1.getInt(1);
-                        }
-                    }
-                    // Get validity(Срок действия)
-                    preparedStatement = connection.prepareStatement("SELECT p.number_value" + sqlFilter + sqlValidity);
-                    preparedStatement.setInt(1, id);
-
-                    try (ResultSet result1 = preparedStatement.executeQuery();) {
-                        while (result1.next()) {
-                            validity = result1.getInt(1);
-                        }
-                    }
-                    // Get information about swimming pool
-                    preparedStatement = connection.prepareStatement("SELECT p.text_value" + sqlFilter + sqlHavePool);
-                    preparedStatement.setInt(1, id);
-
-                    try (ResultSet result1 = preparedStatement.executeQuery();) {
-                        while (result1.next()) {
-                            if (result1.getString(1).equals("Да")) pool = true;
-                        }
-                    }
-                    // Get card's type
-                    preparedStatement = connection.prepareStatement("SELECT p.text_value" + sqlFilter+sqlType);
-                    preparedStatement.setInt(1, id);
-                    //result1 = preparedStatement.executeQuery();
-                    try (ResultSet result1 = preparedStatement.executeQuery();) {
-                        while (result1.next()) {
-                            type = result1.getString(1);
-                        }
-                    }
-
-                    // Add new card to list
-                    cards.add(new Card(id, result.getString("name"), price, validity, pool, type, result.getString("description")));
+                    clubs.add(new Club(result.getString("name"), result.getString("address"),
+                            result.getString("phone"), result.getInt("avgPr"),
+                            result.getInt("numCr"), result.getString("descr")));
                 }
             }
 
@@ -335,10 +201,86 @@ public class Container {
             cnfe.printStackTrace();
         }
 
-        // Сортируем карты по пулярности
-        if (filter.isPopularity()) Collections.sort(cards);
+        return clubs;
+    }
+
+    public List<Card> getCards(CardFilter filter){
+
+        List<Card> cards = new ArrayList<Card>();
+
+        try {
+            // Load driver
+            Class.forName(driver);
+            // Create connection
+            connection = getConnection();
+
+            // Вычисляем диапазон выводимого результата
+            int startPage = (filter.getPage()-1)*filter.getCountOnPage() + 1;
+            int finishPage = startPage + filter.getCountOnPage() - 1;
+
+            // SQL query for cards
+            String sql = "SELECT qw.*" +
+                    "from " +
+                    "     (" +
+                    "       SELECT o.object_id id, " +
+                    "              o.name name, " +
+                    "              cost.number_value cost, " +
+                    "              validity.number_value validity, " +
+                    "              pool.text_value pool, " +
+                    "              o.description descr, " +
+                    "              district.text_value distr, " +
+                    "              club.name club_name," +
+                    "              row_number() over (order by o.name) rn " +
+                    "      from objects o " +
+                    "       join params cost " +
+                    "        on cost.object_id = o.object_id" +
+                    "        and cost.attribute_id = 13" +
+                    "       join params validity " +
+                    "        on validity.object_id = o.object_id " +
+                    "        and validity.attribute_id = 40" +
+                    "       join params pool " +
+                    "        on pool.object_id = o.object_id " +
+                    "        and pool.attribute_id = 61" +
+                    "       join params district " +
+                    "        on district.object_id = o.parent_id" +
+                    "        and district.attribute_id = 41" +
+                    "       join objects club" +
+                    "        on club.object_id = o.parent_id" +
+                    "      where 1=1 "
+                    + filter.toString() +
+                    " ) qw " +
+                    " where qw.rn between " + startPage + " and " + finishPage;
+
+            if (filter.isPopularity()) sql+= " order by qw.name, qw.cost, qw.validity ";
+
+
+
+            Statement stat = connection.createStatement();
+
+
+            try (ResultSet result = stat.executeQuery(sql)) {
+
+                while (result.next()) {
+
+                    boolean pool = false;
+                    if (filter.isHavePool()) pool = true;
+
+                    cards.add(new Card(result.getInt("id"), result.getString("name"),
+                            result.getInt("cost"), result.getInt("validity"), pool
+                            , "", result.getString("descr")));
+                }
+            }
+
+
+
+        }
+        catch (SQLException sqle){
+            sqle.printStackTrace();
+        }
+        catch (ClassNotFoundException cnfe){
+            cnfe.printStackTrace();
+        }
 
         return cards;
-
     }
 }

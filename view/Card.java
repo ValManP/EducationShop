@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.lang.*;
 import java.lang.Object;
 
-public class Card implements Serializable, Comparable {
+public class Card implements Serializable {
 
     private int id;
     private String name;
@@ -80,22 +80,4 @@ public class Card implements Serializable, Comparable {
         this.description = description;
     }
 
-
-    @Override
-    public int compareTo(Object o) {
-        Card tmp = (Card)o;
-
-        if (this.getPrice() < tmp.getPrice())
-            return -1;
-        if (this.getPrice() > tmp.getPrice())
-            return 1;
-        if (this.getPrice() == tmp.getPrice()){
-            if (this.getValidity() < tmp.getValidity())
-                return -1;
-            if (this.getValidity() > tmp.getValidity())
-                return 1;
-        }
-
-        return 0;
-    }
 }

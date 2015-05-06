@@ -11,6 +11,9 @@ public class CardFilter implements Serializable{
     private String clubName;
     private String validity;
     private boolean havePool;
+
+    private int countOnPage;
+    private int page;
     //private boolean groupProgram;
     //private boolean
 
@@ -71,7 +74,24 @@ public class CardFilter implements Serializable{
         this.havePool = havePool;
     }
 
-    public CardFilter() {
+    public int getCountOnPage() {
+        return countOnPage;
+    }
+
+    public void setCountOnPage(int countOnPage) {
+        this.countOnPage = countOnPage;
+    }
+
+    public int getPage() {
+        return page;
+    }
+
+    public void setPage(int page) {
+        this.page = page;
+    }
+
+    public CardFilter(int page) {
+        this.page = page;
         this.popularity = false;
         this.priceFrom = "";
         this.priceTo = "";
@@ -81,8 +101,7 @@ public class CardFilter implements Serializable{
         this.havePool = false;
     }
 
-    public CardFilter(boolean popularity, String priceFrom, String priceTo, String districtName, String clubName, String validity, boolean havePool) {
-
+    public CardFilter(boolean popularity, String priceFrom, String priceTo, String districtName, String clubName, String validity, boolean havePool, int page, int countOnPage) {
         this.popularity = popularity;
         this.priceFrom = priceFrom;
         this.priceTo = priceTo;
@@ -90,6 +109,8 @@ public class CardFilter implements Serializable{
         this.clubName = clubName;
         this.validity = validity;
         this.havePool = havePool;
+        this.countOnPage = countOnPage;
+        this.page = page;
     }
 
     @Override
@@ -97,15 +118,15 @@ public class CardFilter implements Serializable{
         String sqlFilter = "";
 
         if (!this.priceFrom.equals(""))
-            sqlFilter += " AND a.name = 'Цена(руб.)' AND p.number_value >= "+ this.priceFrom + " ";
+            sqlFilter += " AND cost.number_value >= "+ this.priceFrom + " ";
         if (!this.priceTo.equals(""))
-            sqlFilter += " AND a.name = 'Цена(руб.)' AND p.number_value <=  "+ this.priceTo + " ";
+            sqlFilter += " AND cost.number_value <=  "+ this.priceTo + " ";
         if (!this.districtName.equals(""))
-            sqlFilter += " AND a.name = 'Район' AND p.text_value < "+ this.priceTo + " ";
+            sqlFilter += " AND district.text_value = '"+ this.getDistrictName() + "' ";
         if (!this.clubName.equals(""))
-            sqlFilter += " AND o.parent_id = (SELECT oo.object_id FROM objects oo WHERE oo.name = '"+ this.clubName + "') ";
+            sqlFilter += " AND club.name = '"+ this.clubName + "' ";
         if (this.havePool == true)
-            sqlFilter += " AND a.name = 'Бассейн' AND p.text_value = 'Да' ";
+            sqlFilter += " AND pool.text_value = 'Да' ";
 
         return sqlFilter;
     }
