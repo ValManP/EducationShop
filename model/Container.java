@@ -39,66 +39,6 @@ public class Container {
         return DriverManager.getConnection(url, name, password);
     }
 
-    public List<Object> getObjects(String condition){
-
-        try {
-            //Загружаем драйвер
-            Class.forName(driver);
-            //Создаём соединение
-            connection = getConnection();
-
-
-            // Отбираем объекты по фильтру
-            String sql = "SELECT o.object_id, o.object_type_id, o.name, ot.name t_name " +
-                    " FROM objects o, object_types ot, references r, attributes a, params p " +
-                    " WHERE o.object_id = r.object_id " +
-                    " AND r.attribute_id = a.attribute_id " +
-                    " AND o.object_type_id = ot.object_type_id " +
-                    " AND o.object_id = p.object_id " +
-                    " AND a.attribute_id = p.attribute_id " + condition;
-
-            Statement stat = connection.createStatement();
-            try (ResultSet result = stat.executeQuery(sql))
-            {
-                while (result.next()){
-                    Object tmp = new Object(result.getInt("object_id"), result.getInt("object_type_id"),
-                            result.getString("name"), result.getString("t_name"));
-                    objects.add(tmp);
-                }
-            }
-
-            // Получаем параметры объектов
-            String sql1 = "SELECT a.name, a_t.value_type, p.number_value, p.text_value, p.date_value, p.data_value " +
-                    " FROM objects o, references r, attributes a, attribute_types a_t, params p " +
-                    " WHERE o.object_id = ?" +
-                    " AND o.object_id = r.object_id " +
-                    " AND r.attribute_id = a.attribute_id " +
-                    " AND a.attribute_type_id = a_t.attribute_type_id " +
-                    " AND o.object_id = p.object_id " +
-                    " AND a.attribute_id = p.attribute_id ";
-            PreparedStatement preparedStatement = null;
-
-            for (Object currObj: objects) {
-                preparedStatement = connection.prepareStatement(sql1);
-                preparedStatement.setInt(1, currObj.getObject_id());
-                try (ResultSet result1 = preparedStatement.executeQuery()) {
-                    while (result1.next()) {
-                        currObj.addParams(result1.getString("name"), result1.getString(result1.getInt(2) + 2));
-                    }
-                }
-            }
-
-        }
-        catch (SQLException sqle){
-                sqle.printStackTrace();
-            }
-        catch (ClassNotFoundException cnfe){
-            cnfe.printStackTrace();
-        }
-
-        return objects;
-    }
-
     public List<String> getClubNames(){
         List<String> names = new ArrayList<String>();
 
