@@ -8,15 +8,17 @@ public class Card implements Serializable {
 
     private int id;
     private String name;
+    private String clubName;
     private int price;
     private int validity;
     private boolean havePool;
     private String type;
     private String description;
 
-    public Card(int id, String name, int price, int validity, boolean havePool, String type, String description) {
+    public Card(int id, String name, String clubName, int price, int validity, boolean havePool, String type, String description) {
         this.id = id;
         this.name = name;
+        this.clubName = clubName;
         this.price = price;
         this.validity = validity;
         this.havePool = havePool;
@@ -38,6 +40,14 @@ public class Card implements Serializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getClubName() {
+        return clubName;
+    }
+
+    public void setClubName(String clubName) {
+        this.clubName = clubName;
     }
 
     public int getPrice() {

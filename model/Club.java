@@ -5,7 +5,7 @@ import java.lang.*;
 import java.lang.Object;
 
 
-public class Club implements Serializable, Comparable{
+public class Club implements Serializable{
 
     private String name;
     private String address;
@@ -13,6 +13,17 @@ public class Club implements Serializable, Comparable{
     private int avgPriceCard;
     private int numberOfCards;
     private String descriptionClub;
+    private String district;
+
+    public Club(String name, String address, String phone, int avgPriceCard, int numberOfCards, String descriptionClub, String district) {
+        this.name = name;
+        this.address = address;
+        this.phone = phone;
+        this.avgPriceCard = avgPriceCard;
+        this.numberOfCards = numberOfCards;
+        this.descriptionClub = descriptionClub;
+        this.district = district;
+    }
 
     public String getName() {
         return name;
@@ -62,31 +73,11 @@ public class Club implements Serializable, Comparable{
         this.descriptionClub = descriptionClub;
     }
 
-    public Club(String name, String address, String phone, int avgPriceCard, int numberOfCards, String descriptionClub) {
-        this.name = name;
-
-        this.address = address;
-        this.phone = phone;
-        this.avgPriceCard = avgPriceCard;
-        this.numberOfCards = numberOfCards;
-        this.descriptionClub = descriptionClub;
+    public String getDistrict() {
+        return district;
     }
 
-    @Override
-    public int compareTo(Object o) {
-        Club tmp = (Club)o;
-
-        if (this.getNumberOfCards() < tmp.getNumberOfCards())
-            return -1;
-        if (this.getNumberOfCards() > tmp.getNumberOfCards())
-            return 1;
-        if (this.getNumberOfCards() == tmp.getNumberOfCards()){
-            if (this.getAvgPriceCard() < tmp.getAvgPriceCard())
-                return -1;
-            if (this.getAvgPriceCard() > tmp.getAvgPriceCard())
-                return 1;
-
-        }
-          return 0;
+    public void setDistrict(String district) {
+        this.district = district;
     }
 }

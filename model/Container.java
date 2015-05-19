@@ -11,7 +11,6 @@ public class Container {
 
     final static private String driver = "oracle.jdbc.OracleDriver";
 
-    private List<Object> objects;
     private Connection connection;
     private String url;
     private String name;
@@ -23,7 +22,6 @@ public class Container {
         name = "project_lab";
         password = "project_lab1";
 
-        objects = new ArrayList<Object>();
     }
 
     public Container(String _url, String _name, String _password){
@@ -32,7 +30,6 @@ public class Container {
         name = _name;
         password = _password;
 
-        objects = new ArrayList<Object>();
     }
 
     private Connection getConnection () throws SQLException{
@@ -98,6 +95,7 @@ public class Container {
                     "       (select club_pack.avgPriceCard(o.object_id) from dual ) avgPr, " +
                     "       (select club_pack.numberOfCard(o.object_id) from dual ) numCr, " +
                     "       o.description descr, " +
+                    "       district.text_value distr, " +
                     "       row_number() over (order by o.name) rn " +
                     " from objects o " +
                     " join params address " +
@@ -127,7 +125,7 @@ public class Container {
 
                     clubs.add(new Club(result.getString("name"), result.getString("address"),
                             result.getString("phone"), result.getInt("avgPr"),
-                            result.getInt("numCr"), result.getString("descr")));
+                            result.getInt("numCr"), result.getString("descr"), result.getString("distr")));
                 }
             }
 
@@ -205,7 +203,7 @@ public class Container {
                     boolean pool = false;
                     if (filter.isHavePool()) pool = true;
 
-                    cards.add(new Card(result.getInt("id"), result.getString("name"),
+                    cards.add(new Card(result.getInt("id"), result.getString("name"),result.getString("club_name"),
                             result.getInt("cost"), result.getInt("validity"), pool
                             , "", result.getString("descr")));
                 }
@@ -222,5 +220,111 @@ public class Container {
         }
 
         return cards;
+    }
+
+    public void addCard(Card newCard){
+
+        try {
+            //Загружаем драйвер
+            Class.forName(driver);
+            //Создаём соединение
+            connection = getConnection();
+
+            Statement stat = connection.createStatement();
+
+
+            // Отбираем клуб
+            String sql = "begin " +
+                    " object_pack.add_obj('Абонемент', '" + newCard.getName()  + "', '" +
+                    newCard.getClubName() + "'); " +
+                    " end;";
+
+
+
+            stat.execute(sql);
+
+            String sqlParams = " begin object_pack.add_obj_params(?, ?, ?, ?); end;";
+
+            PreparedStatement param = connection.prepareStatement(sqlParams);
+
+            param.setString(1, newCard.getName());
+
+            // Price
+            param.setString(2, "Цена(руб.)");
+            param.setInt(3, newCard.getPrice());
+            param.setNull(4, 0);
+            param.execute();
+
+            // Validity
+            param.setString(2, "Срок действия"); param.setInt(3, newCard.getValidity()); param.setNull(4, 0);
+            param.execute();
+
+            // Pool
+            String pool; if (newCard.isHavePool()) pool = "Да"; else pool = "Нет";
+            param.setString(2, "Бассейн");
+            param.setNull(3, 0); param.setString(4, pool);
+            param.execute();
+
+
+        }
+        catch (SQLException sqle){
+            sqle.printStackTrace();
+        }
+        catch (ClassNotFoundException cnfe){
+            cnfe.printStackTrace();
+        }
+    }
+
+    public void addClub(Club newClub){
+
+        try {
+            //Загружаем драйвер
+            Class.forName(driver);
+            //Создаём соединение
+            connection = getConnection();
+
+            Statement stat = connection.createStatement();
+
+
+            // Отбираем клуб
+            String sql = "begin " +
+                    " object_pack.add_obj('Фитнес-клуб', '" + newClub.getName() + "'); " +
+                    " end;";
+
+
+
+            stat.execute(sql);
+
+            String sqlParams = " begin object_pack.add_obj_params(?, ?, ?, ?); end;";
+
+            PreparedStatement param = connection.prepareStatement(sqlParams);
+
+            param.setString(1, newClub.getName());
+
+            // Address
+            param.setString(2, "Адрес");
+            param.setNull(3, 0);
+            param.setString(4, newClub.getAddress());
+            param.execute();
+
+            // Phone
+            param.setString(2, "Телефон");
+            param.setNull(3, 0);
+            param.setString(4, newClub.getPhone());
+            param.execute();
+
+            // District
+            param.setString(2, "Район");
+            param.setNull(3, 0);
+            param.setString(4, newClub.getDistrict());
+            param.execute();
+
+        }
+        catch (SQLException sqle){
+            sqle.printStackTrace();
+        }
+        catch (ClassNotFoundException cnfe){
+            cnfe.printStackTrace();
+        }
     }
 }
