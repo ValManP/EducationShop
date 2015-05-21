@@ -90,14 +90,15 @@ public class CardFilter implements Serializable{
         this.page = page;
     }
 
-    public CardFilter(int page) {
-        this.page = page;
+    public CardFilter() {
+        this.page = 1;
         this.popularity = false;
         this.priceFrom = "";
         this.priceTo = "";
         this.districtName = "";
         this.clubName = "";
         this.validity = "";
+        this.countOnPage = 6;
         this.havePool = false;
     }
 
