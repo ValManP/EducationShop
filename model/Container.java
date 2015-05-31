@@ -1,7 +1,9 @@
 package logic;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Properties;
 import java.util.List;
 import java.sql.*;
 import view.*;
@@ -9,18 +11,29 @@ import view.*;
 
 public class Container {
 
-    final static private String driver = "oracle.jdbc.OracleDriver";
-
+    private String driver;
     private Connection connection;
     private String url;
     private String name;
     private String password;
 
-    public Container(){
-        connection = null;
-        url = "jdbc:oracle:thin:@edu-netcracker.com:1520:XE";
-        name = "project_lab";
-        password = "project_lab1";
+    public Container() throws IOException {
+
+        Properties props = new Properties();
+
+        try {
+            FileInputStream in = new FileInputStream(System.getProperty("user.dir")+ "\\model\\config.properties");
+            props.load(in);
+            in.close();
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+
+        driver = props.getProperty("Database.Driver");
+        url = props.getProperty("Database.DataURL");
+        name = props.getProperty("Database.Prop.user");
+        password = props.getProperty("Database.Prop.password");
 
     }
 
