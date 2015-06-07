@@ -350,7 +350,7 @@ public class Container {
 
             String sql = "SELECT a.attribute_id, a.name FROM attributes a, attribute_bind ab " +
                     "WHERE  a.attribute_id = ab.attribute_id AND ab.object_type_id = ";
-            if (role.equals("user")) sql+="4"; else sql+="2";
+            if (role.equals("ROLE_USER")) sql+="4"; else sql+="2";
 
             Statement stat = connection.createStatement();
 
@@ -382,7 +382,7 @@ public class Container {
             int obj_type_id = 0, obj_id = 0;
             String name = data.get(5);
             // Создаем новый объект(клуб и пользователь)
-            if (role.equals("user")) obj_type_id=4; else obj_type_id = 2;
+            if (role.equals("ROLE_USER")) obj_type_id=4; else obj_type_id = 2;
             String sql = "insert into objects(object_type_id, name)" +
                     " values (" + obj_type_id + ", '" + name+"')";
 
@@ -421,12 +421,26 @@ public class Container {
                 }
 
                 param.setString(2, name);
+                param.setNull(3, 0);
+                param.setNull(4, 0);
 
                 if (type == 1) param.setInt(3, (int)currObj.getValue());
                 else param.setString(4,currObj.getValue().toString());
 
                 param.execute();
             }
+            // Set "enabled"
+            param.setString(2, "enabled");
+            param.setNull(3, 0);
+            param.setString(4, "TRUE");
+            param.execute();
+
+            // Set "authority"
+            param.setString(2, "authority");
+            param.setNull(3, 0);
+            if (role.equals("ROLE_USER")) param.setString(4, "ROLE_USER");
+            else param.setString(4, "ROLE_CLUB");
+            param.execute();
 
         }
         catch (SQLException sqle){
