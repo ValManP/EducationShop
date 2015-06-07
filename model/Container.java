@@ -2,9 +2,7 @@ package logic;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Properties;
-import java.util.List;
+import java.util.*;
 import java.sql.*;
 import view.*;
 
@@ -22,7 +20,7 @@ public class Container {
         Properties props = new Properties();
 
         try {
-            FileInputStream in = new FileInputStream(System.getProperty("user.dir")+ "\\model\\config.properties");
+            FileInputStream in = new FileInputStream(System.getProperty("user.dir")+ "\\src\\logic\\config.properties");
             props.load(in);
             in.close();
         }
@@ -331,6 +329,104 @@ public class Container {
             param.setNull(3, 0);
             param.setString(4, newClub.getDistrict());
             param.execute();
+
+        }
+        catch (SQLException sqle){
+            sqle.printStackTrace();
+        }
+        catch (ClassNotFoundException cnfe){
+            cnfe.printStackTrace();
+        }
+    }
+
+    public Map<Integer, String> getUserAttributes(String role){
+        Map<Integer, String> m = new HashMap<>();
+
+        try {
+            // Load driver
+            Class.forName(driver);
+            // Create connection
+            connection = getConnection();
+
+            String sql = "SELECT a.attribute_id, a.name FROM attributes a, attribute_bind ab " +
+                    "WHERE  a.attribute_id = ab.attribute_id AND ab.object_type_id = ";
+            if (role.equals("user")) sql+="4"; else sql+="2";
+
+            Statement stat = connection.createStatement();
+
+            try (ResultSet result = stat.executeQuery(sql)) {
+
+                while (result.next()) {
+                    m.put(result.getInt(1),result.getString(2));
+                }
+            }
+
+        }
+        catch (SQLException sqle){
+            sqle.printStackTrace();
+        }
+        catch (ClassNotFoundException cnfe){
+            cnfe.printStackTrace();
+        }
+
+        return m;
+    }
+
+    public void userRegistration(Map<Integer, String> data, String role){
+        try {
+            // Load driver
+            Class.forName(driver);
+            // Create connection
+            connection = getConnection();
+
+            int obj_type_id = 0, obj_id = 0;
+            String name = data.get(5);
+            // Создаем новый объект(клуб и пользователь)
+            if (role.equals("user")) obj_type_id=4; else obj_type_id = 2;
+            String sql = "insert into objects(object_type_id, name)" +
+                    " values (" + obj_type_id + ", '" + name+"')";
+
+            Statement stat = connection.createStatement();
+            stat.execute(sql);
+
+            sql = "select o.object_id from objects o where o.name = '" + name +"'";
+            try (ResultSet result = stat.executeQuery(sql)) {
+
+                while (result.next()) {
+                    obj_id = result.getInt(1);
+                }
+            }
+
+            String sqlParams = "begin object_pack.add_obj_params(?, ?, ?, ?); end;";
+
+            PreparedStatement param = connection.prepareStatement(sqlParams);
+
+            param.setString(1, name);
+            param.setNull(3, 0);
+            param.setNull(4, 0);
+
+            String tmp = "SELECT a.name, a_t.value_type FROM attributes a, attribute_types a_t" +
+                    " WHERE a_t.attribute_type_id = a.attribute_type_id" +
+                    " AND a.attribute_id = " ;
+            //Set<Map.Entry> s = new HashSet<>();
+            int type = 0;
+
+            for (Map.Entry currObj: data.entrySet()){
+
+                try (ResultSet result = stat.executeQuery(tmp+currObj.getKey())) {
+                    while (result.next()) {
+                        name = result.getString(1);
+                        type = result.getInt(2);
+                    }
+                }
+
+                param.setString(2, name);
+
+                if (type == 1) param.setInt(3, (int)currObj.getValue());
+                else param.setString(4,currObj.getValue().toString());
+
+                param.execute();
+            }
 
         }
         catch (SQLException sqle){

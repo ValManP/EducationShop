@@ -27,7 +27,7 @@ public class History {
         Properties props = new Properties();
 
         try {
-            FileInputStream in = new FileInputStream(System.getProperty("user.dir")+ "\\model\\config.properties");
+            FileInputStream in = new FileInputStream(System.getProperty("user.dir")+ "\\src\\logic\\config.properties");
             props.load(in);
             in.close();
         }
@@ -49,15 +49,25 @@ public class History {
             // Create connection
             connection = getConnection();
 
+            int id = 0;
             Statement stat = connection.createStatement();
+
+            String s = "SELECT o.object_id FROM objects o WHERE o.name = '" + login + "' ";
+            try (ResultSet result = stat.executeQuery(s)) {
+
+                while (result.next()) {
+
+                    id = result.getInt(1);
+                }
+            }
 
             DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
             Date today = Calendar.getInstance().getTime();
 
             String reportDate = df.format(today);
 
-            String sql = "insert into history(login, data, text) values ('" + login
-                    + "', to_date('" + reportDate + "', 'MM.dd.yyyy'), '"+ text + "')";
+            String sql = "insert into history(id, dates, text) values (" + id
+                    + ", to_date('" + reportDate + "', 'MM.dd.yyyy'), '"+ text + "')";
 
             stat.execute(sql);
 
@@ -82,13 +92,13 @@ public class History {
 
             Statement stat = connection.createStatement();
 
-            String sql = "SELECT h.date, h.text FROM history h WHERE h.login = '" + login + "'";
+            String sql = "SELECT h.dates, h.text FROM history h WHERE h.id = (SELECT o.object_id FROM objects o WHERE o.name = '" + login + "')";
 
             try (ResultSet result = stat.executeQuery(sql)) {
 
                 while (result.next()) {
 
-                    history.put(result.getDate("date"), result.getString("text"));
+                    history.put(result.getDate("dates"), result.getString("text"));
                 }
             }
 
